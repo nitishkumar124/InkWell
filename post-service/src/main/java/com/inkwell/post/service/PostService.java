@@ -23,4 +23,6 @@ public interface PostService {
     long getLikeCount(Long postId);
     
     List<PostResponse> getPostsByAuthor(Long authorId);
+    
+    void incrementView(Long postId, Long userId);
 }
