@@ -19,4 +19,6 @@ public interface CommentService {
     Comment getById(Long id);
     
     List<Comment> getPendingCommentsForAuthor(Long authorId);
+    
+    List<Comment> getAllPendingComments();
 }
