@@ -168,4 +168,27 @@ public class CommentController {
                 .data(comments)
                 .build();
     }
+    
+ // GET ALL PENDING COMMENTS (ADMIN)
+    @GetMapping("/pending/all")
+    public ApiResponse<List<Comment>> getAllPendingComments(
+            HttpServletRequest request) {
+
+        String role = getRole(request);
+
+        if (!"ADMIN".equals(role)) {
+            throw new RuntimeException(
+                    "Only ADMIN can access all pending comments"
+            );
+        }
+
+        List<Comment> comments =
+                commentService.getAllPendingComments();
+
+        return ApiResponse.<List<Comment>>builder()
+                .success(true)
+                .message("All pending comments fetched successfully")
+                .data(comments)
+                .build();
+    }
 }

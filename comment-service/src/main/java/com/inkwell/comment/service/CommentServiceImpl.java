@@ -1,24 +1,44 @@
 package com.inkwell.comment.service;
 
-import com.inkwell.comment.entity.*;
-import com.inkwell.comment.repository.CommentRepository;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.inkwell.comment.client.PostServiceClient;
+import com.inkwell.comment.common.ApiResponse;
+import com.inkwell.comment.dto.PostResponseDTO;
+import com.inkwell.comment.entity.Comment;
+import com.inkwell.comment.entity.CommentStatus;
+import com.inkwell.comment.repository.CommentRepository;
 
 @Service
 public class CommentServiceImpl implements CommentService {
 
     @Autowired
     private CommentRepository commentRepository;
+    
+    @Autowired
+    private PostServiceClient postServiceClient;
 
     @Override
     public Comment addComment(Comment comment) {
+
+        ApiResponse<PostResponseDTO> response =
+                postServiceClient.getPostById(comment.getPostId());
+
+        if (response == null || response.getData() == null) {
+            throw new RuntimeException("Post not found");
+        }
+
+        comment.setPostAuthorId(
+                response.getData().getAuthorId()
+        );
+
         comment.setStatus(CommentStatus.PENDING);
         comment.setCreatedAt(LocalDateTime.now());
+
         return commentRepository.save(comment);
     }
 
@@ -57,6 +77,14 @@ public class CommentServiceImpl implements CommentService {
 
         return commentRepository.findByPostAuthorIdAndStatus(
                 authorId,
+                CommentStatus.PENDING
+        );
+    }
+    
+    @Override
+    public List<Comment> getAllPendingComments() {
+
+        return commentRepository.findByStatus(
                 CommentStatus.PENDING
         );
     }
