@@ -10,8 +10,10 @@ import com.inkwell.post.dto.PostResponse;
 import com.inkwell.post.entity.Post;
 import com.inkwell.post.entity.PostLike;
 import com.inkwell.post.entity.PostStatus;
+import com.inkwell.post.entity.PostView;
 import com.inkwell.post.repository.PostLikeRepository;
 import com.inkwell.post.repository.PostRepository;
+import com.inkwell.post.repository.PostViewRepository;
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -21,6 +23,9 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	private PostLikeRepository likeRepository;
+	
+	@Autowired
+	private PostViewRepository postViewRepository;
 
 	// ✅ ONLY business logic here
 	@Override
@@ -50,8 +55,8 @@ public class PostServiceImpl implements PostService {
 
 		Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found"));
 
-		post.setViewCount(post.getViewCount() + 1);
-		postRepository.save(post);
+//		post.setViewCount(post.getViewCount() + 1);
+//		postRepository.save(post);
 
 		return mapToResponse(post);
 	}
@@ -95,10 +100,47 @@ public class PostServiceImpl implements PostService {
 	public long getLikeCount(Long postId) {
 		return likeRepository.countByPostId(postId);
 	}
+	
+	@Override
+	public void incrementView(Long postId, Long userId) {
+
+	    // guests don't count
+	    if (userId == null) {
+	        return;
+	    }
+
+	    boolean alreadyViewed =
+	        postViewRepository
+	            .existsByPostIdAndUserId(
+	                postId,
+	                userId
+	            );
+
+	    if (alreadyViewed) {
+	        return;
+	    }
+
+	    Post post = postRepository.findById(postId)
+	        .orElseThrow(() ->
+	            new RuntimeException("Post not found"));
+
+	    post.setViewCount(
+	        post.getViewCount() + 1
+	    );
+
+	    postRepository.save(post);
+
+	    PostView view = PostView.builder()
+	        .postId(postId)
+	        .userId(userId)
+	        .build();
+
+	    postViewRepository.save(view);
+	}
 
 	private PostResponse mapToResponse(Post post) {
 		return PostResponse.builder().id(post.getId()).title(post.getTitle()).content(post.getContent())
 				.imageUrl(post.getImageUrl()).authorId(post.getAuthorId()).viewCount(post.getViewCount())
-				.isFeatured(post.isFeatured()).likeCount(likeRepository.countByPostId(post.getId())).build();
+				.isFeatured(post.isFeatured()).likeCount(likeRepository.countByPostId(post.getId())).status(post.getStatus()).build();
 	}
 }
