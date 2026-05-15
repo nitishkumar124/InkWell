@@ -129,12 +129,29 @@ public class PostController {
 
 	// GET SINGLE POST
 	@GetMapping("/{id}")
-	public ApiResponse<PostResponse> getPost(@PathVariable Long id) {
+	public ApiResponse<PostResponse> getPost(
+	        @PathVariable Long id,
+	        HttpServletRequest request) {
 
-		PostResponse post = postService.getPostById(id);
+	    Long userId = null;
 
-		return ApiResponse.<PostResponse>builder().success(true).message("Post fetched successfully").data(post)
-				.build();
+	    // guests should not count as views
+	    try {
+	        userId = getUserId(request);
+	    } catch (Exception ignored) {
+	    }
+
+	    // increment only once per user
+	    postService.incrementView(id, userId);
+
+	    PostResponse post =
+	            postService.getPostById(id);
+
+	    return ApiResponse.<PostResponse>builder()
+	            .success(true)
+	            .message("Post fetched successfully")
+	            .data(post)
+	            .build();
 	}
 
 	// DELETE POST
